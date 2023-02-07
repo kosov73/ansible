@@ -1,0 +1,10 @@
+- hosts: crm
+
+  tasks:
+
+  - name: Get branch name
+  become: yes
+  become_user: www-data
+  shell:
+    cmd: git rev-parse --abbrev-ref HEAD
+  register: bname
