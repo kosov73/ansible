@@ -1,0 +1,34 @@
+---
+- hosts: test
+
+  tasks:
+
+  - name: Get CRM Version
+    become: true
+    become_user: www-data
+    shell: cd /var/www/html/ && php -r "\$ver = include 'release.php'; echo \explode(' ',\$ver['fixVersion'])[1];"
+    register: version
+  
+  - name: Show CRM Version
+    debug:
+      var: version.stdout
+
+  - name: Get Release
+    shell: php -r "echo json_decode(file_get_contents('http://licence.test-pro.com/getVersion'),true)['version'];"
+    register: release2
+
+  - name: Show Release
+    debug:
+      var: release2.stdout
+
+  - name: Backup CRM
+    command: sh /home/user/backup.sh -nf
+    become: yes
+    when:  version.stdout != release2.stdout
+
+  - name: Update Version
+    shell: cd /var/www/html/ && sudo -u www-data git pull && sudo -u www-data php -f restart.php
+    dest: /var/www/html
+    sudo: yes
+    sudo_user: www-data
+    when:  version.stdout != release2.stdout
